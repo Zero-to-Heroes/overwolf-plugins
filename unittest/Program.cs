@@ -10,7 +10,7 @@ namespace overwolf.plugins.unittest
 {
   class Program
   {
-    static SimpleIOPlugin plugn = new SimpleIOPlugin();
+    static SimpleIOPluginZip plugn = new SimpleIOPluginZip();
     static void Main(string[] args)
     {
       int maxthread =0;

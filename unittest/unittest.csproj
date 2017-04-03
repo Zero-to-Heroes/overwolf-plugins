@@ -49,9 +49,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\simple-io-plugin\simple-io-plugin.csproj">
+    <ProjectReference Include="..\simple-io-plugin\simple-io-plugin-zip.csproj">
       <Project>{6f678d1a-2549-470a-8e52-644a826a5e38}</Project>
-      <Name>simple-io-plugin</Name>
+      <Name>simple-io-plugin-zip</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
