@@ -57,7 +57,7 @@ namespace overwolf.plugins
             {
              // lastMaxOffset = reader.BaseStream.Position;
               notifierDelegate(id, false, "truncated");
-              return;
+							lastFilePosition = 0;
             }
 
             //seek to the last max offset

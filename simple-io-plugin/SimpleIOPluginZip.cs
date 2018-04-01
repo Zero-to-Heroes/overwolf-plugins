@@ -147,7 +147,7 @@ namespace overwolf.plugins
 		#endregion
 
 		#region Functions
-		public void fileExists(string path, Action<object> callback)
+		public void fileExists(string path, Action<object, object> callback)
 		{
 
 			if (callback == null)
@@ -155,7 +155,7 @@ namespace overwolf.plugins
 
 			if (string.IsNullOrEmpty(path))
 			{
-				callback(false);
+				callback(false, "path is null or empty: " + path);
 				return;
 			}
 
@@ -164,15 +164,13 @@ namespace overwolf.plugins
 				try
 				{
 					path = path.Replace('/', '\\');
-					callback(File.Exists(path));
+					callback(File.Exists(path), "path: " + path);
 				}
 				catch (Exception ex)
 				{
-					callback(string.Format("error: ", ex.ToString()));
+					callback("error", string.Format("", ex.ToString()));
 				}
 			});
-
-
 		}
 
 		public void isDirectory(string path, Action<object> callback)
@@ -247,7 +245,7 @@ namespace overwolf.plugins
 			}
 		}
 
-		public void writeLocalAppDataZipFile(string path, string filenameInZip, string content, Action<object, object> callback)
+		public void writeLocalAppDataZipFile(string path, string filenameInZip, string content, bool update, Action<object, object> callback)
 		{
 			if (callback == null)
 				return;
@@ -271,7 +269,10 @@ namespace overwolf.plugins
 						onGlobalEvent("Directory name", directoryName);
 						DirectoryInfo di = Directory.CreateDirectory(directoryName);
 
-						using (ZipArchive zip = ZipFile.Open(filePath, ZipArchiveMode.Create, Encoding.UTF8))
+						ZipArchiveMode mode = ZipArchiveMode.Create;
+						if (update) mode = ZipArchiveMode.Update;
+
+						using (ZipArchive zip = ZipFile.Open(filePath, mode, Encoding.UTF8))
 						{
 							ZipArchiveEntry entry = zip.CreateEntry(filenameInZip);
 							using (StreamWriter writer = new StreamWriter(entry.Open(), Encoding.UTF8))
@@ -397,6 +398,58 @@ namespace overwolf.plugins
 			{
 				callback(false, string.Format("Exception GetTextFile: {0}", ex.ToString()));
 			}
+		}
+
+		public void getZippedFile(string filePath, string filenameInZip, Action<object, object> callback)
+		{
+			if (callback == null)
+				return;
+
+			try
+			{
+				Task.Run(() =>
+				{
+					string output = string.Empty;
+					try
+					{
+						if (!File.Exists(filePath))
+						{
+							callback(false, string.Format("File doesn't exists", filePath));
+							return;
+						}
+
+						try
+						{
+							using (ZipArchive zip = ZipFile.Open(filePath, ZipArchiveMode.Read, Encoding.UTF8))
+							{
+								foreach (ZipArchiveEntry entry in zip.Entries)
+								{
+									if (entry.Name == filenameInZip)
+									{
+										callback(true, new StreamReader(entry.Open()).ReadToEnd());
+									}
+										
+								}
+							}
+						}
+						catch (Exception ex)
+						{
+							callback(false, "Fail to read file " + ex.ToString());
+							return;
+						}
+
+					}
+					catch (Exception ex)
+					{
+						callback(false, string.Format("Exception getZippedFile : {0}", ex.ToString()));
+					}
+				});
+			}
+			catch (Exception ex)
+			{
+				callback(false, string.Format("Exception getZippedFile: {0}", ex.ToString()));
+			}
+
 		}
 
 		public void getBinaryFile(string filePath, int limit, Action<object, object> callback)
