@@ -20,7 +20,7 @@ namespace overwolf.plugins
 			_window = new IntPtr(window); ;
 		}
 
-		public SimpleIOPluginZip()
+		public SimpleIOPluginZip() 
 		{
 		}
 
@@ -576,6 +576,46 @@ namespace overwolf.plugins
 			{
 				callback(false, string.Format("listDirectory exception: {0}", ex.ToString()));
 			}
+		}
+
+		public void deleteFile(string filePath, Action<object, object> callback)
+		{
+			if (callback == null)
+				return;
+
+			if (string.IsNullOrEmpty(filePath))
+			{
+				callback(false, "path is null or empty: " + filePath);
+				return;
+			}
+
+			Task.Run(() =>
+			{
+				try
+				{
+					filePath = filePath.Replace('/', '\\');
+					if (File.Exists(filePath))
+					{
+						try
+						{
+							File.Delete(filePath);
+							callback(true, "");
+						}
+						catch (Exception e)
+						{
+							callback(false, "Exception when deleting file: " + e.Message);
+						}
+					}
+					else
+					{
+						callback(false, "No file at path: " + filePath);
+					}
+				}
+				catch (Exception ex)
+				{
+					callback("error", string.Format("", ex.ToString()));
+				}
+			});
 		}
 
 		public void listenOnFile(string id, string filename, bool skipToEnd, Action<object, object, object> callback)
