@@ -517,7 +517,21 @@ namespace overwolf.plugins
 			}
 		}
 
-		public void listDirectory(string path, Action<object, object> callback)
+        public void zipAppLogFolder(string appName, Action<object, object> callback)
+        {
+            var appPath = LOCALAPPDATA + "/Overwolf/Log/Apps/" + appName;
+            var outputPath = appPath + ".zip";
+            ZipFile.CreateFromDirectory(appPath, outputPath);
+            getBinaryFile(outputPath, 0, (success, stringResult) =>
+            {
+                deleteFile(outputPath, (a, b) =>
+                {
+                    callback(success, stringResult);
+                });
+            });
+        }
+
+        public void listDirectory(string path, Action<object, object> callback)
 		{
 			if (callback == null)
 				return;
