@@ -520,12 +520,25 @@ namespace overwolf.plugins
         public void zipAppLogFolder(string appName, Action<object, object> callback)
         {
             var appPath = LOCALAPPDATA + "/Overwolf/Log/Apps/" + appName;
+            var tmpDir = appPath + "/tmpLogs";
+            Directory.CreateDirectory(tmpDir);
+            var logFiles = Directory.GetFiles(appPath);
+            foreach (var file in logFiles)
+            {
+                var fileInfo = new FileInfo(file);
+                if (DateTime.Now.Subtract(fileInfo.LastWriteTime).TotalHours < 6)
+                {
+                    File.Copy(file, tmpDir + "/" + fileInfo.Name, true);
+                }
+            }
             var outputPath = appPath + ".zip";
-            ZipFile.CreateFromDirectory(appPath, outputPath);
+            ZipFile.CreateFromDirectory(tmpDir, outputPath);
             getBinaryFile(outputPath, 0, (success, stringResult) =>
             {
-                deleteFile(outputPath, (a, b) =>
+                Task.Run(() =>
                 {
+                    Directory.Delete(tmpDir, true);
+                    File.Delete(outputPath);
                     callback(success, stringResult);
                 });
             });
@@ -899,6 +912,6 @@ namespace overwolf.plugins
 		private const int VK_LBUTTON = 0x01;
 		private const int VK_RBUTTON = 0x02;
 		private const int KEY_PRESSED = 0x8000;
-		#endregion Private Funcs
-	}
+        #endregion Private Funcs
+    }
 }
