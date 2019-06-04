@@ -650,6 +650,17 @@ namespace overwolf.plugins
 			FileListenerManager.ListenOnFile(id, filename, skipToEnd, callback, OnFileChanged);
 		}
 
+        public void listenOnDirectory(string path, bool includeSubDirectories, Action<object, object> callback)
+        {
+            FileSystemWatcher watcher = new FileSystemWatcher();
+            watcher.Path = path;
+            watcher.NotifyFilter = NotifyFilters.LastWrite;
+            watcher.Filter = "*.*";
+            watcher.Changed += new FileSystemEventHandler((source, evt) => callback(source, evt));
+            watcher.EnableRaisingEvents = true;
+            watcher.IncludeSubdirectories = includeSubDirectories;
+        }
+
 		public void stopFileListen(string id)
 		{
 			FileListenerManager.stopFileListen(id);
