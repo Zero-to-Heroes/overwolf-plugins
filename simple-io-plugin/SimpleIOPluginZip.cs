@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using System.IO.Compression;
+using System.Diagnostics;
 
 namespace overwolf.plugins
 {
@@ -650,6 +651,43 @@ namespace overwolf.plugins
 			FileListenerManager.ListenOnFile(id, filename, skipToEnd, callback, OnFileChanged);
 		}
 
+        public void writeFile(string path, string content, Action<object, object> callback)
+        {
+            if (callback == null)
+                return;
+
+            try
+            {
+                Task.Run(() =>
+                {
+                    try
+                    {
+                        path = path.Replace('/', '\\');
+                        if (path.StartsWith("\\"))
+                        {
+                            path = path.Remove(0, 1);
+                        }
+
+                        using (FileStream filestream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.Write))
+                        {
+                            byte[] info = new UTF8Encoding(false).GetBytes(content);
+                            filestream.Write(info, 0, info.Length);
+                        }
+                        callback(true, "");
+                    }
+                    catch (Exception ex)
+                    {
+                        callback(false, string.Format("unexpected error when trying to write to '{0}' : {1}",
+                          path, ex.ToString()));
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                callback(false, string.Format("error: ", ex.ToString()));
+            }
+        }
+
         public void listenOnDirectory(string path, bool includeSubDirectories, Action<object, object> callback)
         {
             FileSystemWatcher watcher = new FileSystemWatcher();
@@ -683,7 +721,13 @@ namespace overwolf.plugins
 			});
 		}
 
-		private void OnFileChanged(object id, object status, object data)
+        public void openFileInEditor(string fileName, Action<object> callback)
+        {
+            Process.Start(fileName);
+            callback(true);
+        }
+
+        private void OnFileChanged(object id, object status, object data)
 		{
 			if (onFileListenerChanged != null)
 			{
