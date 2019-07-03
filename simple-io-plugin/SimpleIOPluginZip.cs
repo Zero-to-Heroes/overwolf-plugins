@@ -532,7 +532,7 @@ namespace overwolf.plugins
                     File.Copy(file, tmpDir + "/" + fileInfo.Name, true);
                 }
             }
-            var outputPath = appPath + ".zip";
+            var outputPath = appPath + Guid.NewGuid().ToString() + ".zip";
             ZipFile.CreateFromDirectory(tmpDir, outputPath);
             getBinaryFile(outputPath, 0, (success, stringResult) =>
             {
@@ -543,6 +543,39 @@ namespace overwolf.plugins
                     callback(success, stringResult);
                 });
             });
+        }
+  
+        public void createDirectory(string path, Action<object, object> callback)
+        {
+            if (callback == null)
+                return;
+
+            if (path == null)
+            {
+                callback(false, "empty path");
+                return;
+            }
+
+            try
+            {
+                Task.Run(() =>
+                {
+                    try
+                    {
+                        Directory.CreateDirectory(path);
+                        callback(true, "");
+
+                    }
+                    catch (Exception ex)
+                    {
+                        callback(false, string.Format("createDirectory exception: {0}", ex.ToString()));
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                callback(false, string.Format("createDirectory exception: {0}", ex.ToString()));
+            }
         }
 
         public void listDirectory(string path, Action<object, object> callback)
