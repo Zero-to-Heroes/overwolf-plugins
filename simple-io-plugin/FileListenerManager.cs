@@ -1,106 +1,135 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
-namespace overwolf.plugins {
-  static class FileListenerManager {
-    private struct FileListenTaskObject {
-      public Task task;
-      public FileListenerWorker worker;
-    }
-
-    private static Dictionary<string, FileListenTaskObject> _listenTaskes =
-      new Dictionary<string, FileListenTaskObject>();
-
-    public static void ListenOnFile(string id, string filename, bool skipToEnd,
-      Action<object, object, object> callback, Action<object, object, object> notifierDelegate) {
-      if (callback == null)
-        return;
-
-      try {
-        filename = filename.Replace('/', '\\');
-        if (!File.Exists(filename)) {
-          callback(id, false, "file not found: " + filename);
-          return;
+namespace overwolf.plugins
+{
+    static class FileListenerManager
+    {
+        private struct FileListenTaskObject
+        {
+            public Task task;
+            public FileListenerWorker worker;
         }
 
-        StopExistWorker(id);
+        private static Dictionary<string, FileListenTaskObject> _listenTaskes =
+          new Dictionary<string, FileListenTaskObject>();
 
-        var warpper = new FileListenTaskObject();
-        warpper.worker = new FileListenerWorker();
-        warpper.task = Task.Run(() => {
-          try {
-            warpper.worker.ListenOnFile(id, filename, skipToEnd, callback, notifierDelegate);
+        public static void ListenOnFile(string id, string filename, bool skipToEnd,
+          Action<object, object, object> callback, Action<object, object, object, object> notifierDelegate)
+        {
+            if (callback == null)
+                return;
 
-            lock (_listenTaskes) {
-              if (_listenTaskes.ContainsKey(id))
-                _listenTaskes.Remove(id);
+            try
+            {
+                filename = filename.Replace('/', '\\');
+                if (!File.Exists(filename))
+                {
+                    callback(id, false, "file not found: " + filename);
+                    return;
+                }
+
+                StopExistWorker(id);
+
+                var warpper = new FileListenTaskObject();
+                warpper.worker = new FileListenerWorker();
+                warpper.task = Task.Run(() =>
+                {
+                    try
+                    {
+                        warpper.worker.ListenOnFile(id, filename, skipToEnd, callback, notifierDelegate);
+
+                        lock (_listenTaskes)
+                        {
+                            if (_listenTaskes.ContainsKey(id))
+                                _listenTaskes.Remove(id);
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        try
+                        {
+                            lock (_listenTaskes)
+                            {
+                                _listenTaskes.Remove(id);
+                            }
+                        }
+                        catch (Exception)
+                        {
+
+                        }
+
+                    }
+
+                });
+
+                _listenTaskes[id] = warpper;
             }
-          } catch (Exception) {
-            try {
-              lock (_listenTaskes) {
-                _listenTaskes.Remove(id);
-              }
-            } catch (Exception) {
-
+            catch (Exception ex)
+            {
+                callback(id, false, "listenOnFile error:" + ex.ToString());
             }
-
-          }
-
-        });
-
-        _listenTaskes[id] = warpper;
-      } catch (Exception ex) {
-        callback(id, false, "listenOnFile error:" + ex.ToString());
-      }
-    }
-
-    public static void stopFileListen(string id) {
-      StopExistWorker(id);
-    }
-
-    private static void StopExistWorker(string id) {
-      lock (_listenTaskes) {
-        if (_listenTaskes.ContainsKey(id)) {
-          try {
-            _listenTaskes[id].worker.IsCanceled = true;
-          } finally {
-            try {
-              if (_listenTaskes[id].task != null)
-                _listenTaskes[id].task.Dispose();
-            } catch {
-            }
-
-            if (_listenTaskes.ContainsKey(id))
-              _listenTaskes.Remove(id);
-
-          }
-        }
-      }
-    }
-
-
-    public static void Dispose() {
-
-      lock (_listenTaskes) {
-        try {
-          foreach (var fileListenTaskObject in _listenTaskes) {
-            fileListenTaskObject.Value.worker.IsCanceled = true;
-          }
-        } catch (Exception) {
-
-
         }
 
-        _listenTaskes.Clear();
-      }
+        public static void stopFileListen(string id)
+        {
+            StopExistWorker(id);
+        }
 
+        private static void StopExistWorker(string id)
+        {
+            lock (_listenTaskes)
+            {
+                if (_listenTaskes.ContainsKey(id))
+                {
+                    try
+                    {
+                        _listenTaskes[id].worker.IsCanceled = true;
+                    }
+                    finally
+                    {
+                        try
+                        {
+                            if (_listenTaskes[id].task != null)
+                                _listenTaskes[id].task.Dispose();
+                        }
+                        catch
+                        {
+                        }
+
+                        if (_listenTaskes.ContainsKey(id))
+                            _listenTaskes.Remove(id);
+
+                    }
+                }
+            }
+        }
+
+
+        public static void Dispose()
+        {
+
+            lock (_listenTaskes)
+            {
+                try
+                {
+                    foreach (var fileListenTaskObject in _listenTaskes)
+                    {
+                        fileListenTaskObject.Value.worker.IsCanceled = true;
+                    }
+                }
+                catch (Exception)
+                {
+
+
+                }
+
+                _listenTaskes.Clear();
+            }
+
+        }
     }
-  }
 
 }

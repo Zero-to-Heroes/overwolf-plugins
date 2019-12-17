@@ -97,7 +97,7 @@ namespace overwolf.plugins.unittest
     static void plugn_onOutputDebugString(object arg1,object name, object arg2) {
       Console.WriteLine(string.Format("onOutputDebugString pid:{0} text:{1}", arg1, arg2));
     }
-    static void plugn_OnFileListenerChanged(object id, object status, object data)
+    static void plugn_OnFileListenerChanged(object id, object status, object isNewLine, object data)
     {
       //Console.WriteLine(string.Format("file updated: id:{0} status:{1} data:{2}", id, status, data));
     }
